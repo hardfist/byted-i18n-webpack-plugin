@@ -14,5 +14,5 @@ Thumbs.db
 .vscode
 *.sublime-project
 *.sublime-workspace
-
+.vscode-upload.json
 /test/cases/*.tmp.js

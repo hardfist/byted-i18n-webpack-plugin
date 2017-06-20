@@ -27,7 +27,7 @@
     "travis:coverage": "npm run test:coverage -- --runInBand",
     "travis:lint": "npm run lint && npm run security",
     "travis:test": "npm run test -- --runInBand",
-    "webpack-defaults": "webpack-defaults"
+    "webpack": "webpack"
   },
   "devDependencies": {
     "babel-cli": "^6.24.0",
@@ -45,7 +45,7 @@
     "nsp": "^2.6.3",
     "pre-commit": "^1.2.2",
     "standard-version": "^4.0.0",
-    "webpack-defaults": "^1.4.0"
+    "webpack": "^3.0.0"
   },
   "peerDependencies": {
     "webpack": "^2.0.0 || >= 3.0.0-rc.0 || ^3.0.0"
@@ -67,5 +67,8 @@
       "eslint --fix",
       "git add"
     ]
+  },
+  "dependencies": {
+    "esprima-walk": "^0.1.0"
   }
 }
