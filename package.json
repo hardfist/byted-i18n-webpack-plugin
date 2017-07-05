@@ -27,7 +27,8 @@
     "travis:coverage": "npm run test:coverage -- --runInBand",
     "travis:lint": "npm run lint && npm run security",
     "travis:test": "npm run test -- --runInBand",
-    "webpack": "webpack"
+    "webpack": "webpack",
+    "webpack-defaults": "webpack-defaults"
   },
   "devDependencies": {
     "babel-cli": "^6.24.0",
@@ -69,6 +70,6 @@
     ]
   },
   "dependencies": {
-    "esprima-walk": "^0.1.0"
+    "mkdirp": "^0.5.1"
   }
 }

@@ -2,11 +2,12 @@
   MIT License http://www.opensource.org/licenses/mit-license.php
   Author Tobias Koppers @sokra
 */
-import walk from 'esprima-walk';
-import ConstDependency from 'webpack/lib/dependencies/ConstDependency';
-import NullFactory from 'webpack/lib/NullFactory';
-import MissingLocalizationError from './MissingLocalizationError';
-import makeLocalizeFunction from './MakeLocalizeFunction';
+import fs from 'fs';
+import path from 'path';
+import mkdirp from 'mkdirp';
+import ModuleFilenameHelpers from 'webpack/lib/ModuleFilenameHelpers';
+
+const textTable = {};
 
 /**
  *
@@ -15,103 +16,54 @@ import makeLocalizeFunction from './MakeLocalizeFunction';
  * @constructor
  */
 class I18nPlugin {
-  constructor(localization, options, failOnMissing) {
-    // Backward-compatiblility
-    if (typeof options === 'string') {
-      options = {
-        functionName: options,
-      };
-    }
-
-    if (typeof failOnMissing !== 'undefined') {
-      options.failOnMissing = failOnMissing;
-    }
-
+  constructor(localization, options) {
+    this.localization = localization || {};
     this.options = options || {};
-    this.localization = localization ? (typeof localization === 'function' ? localization : makeLocalizeFunction(localization, !!this.options.nested)) : null;
-    this.functionName = this.options.functionName || '__';
     this.failOnMissing = !!this.options.failOnMissing;
     this.hideMessage = this.options.hideMessage || false;
     this.objectName = this.options.objectName || '__';
   }
 
   apply(compiler) {
-    const { localization, failOnMissing, hideMessage } = this; // eslint-disable-line no-unused-vars
-    const funName = this.functionName;
-    const objectName = this.objectName;
-    compiler.plugin('compilation', (compilation, params) => { // eslint-disable-line no-unused-vars
-      compilation.dependencyFactories.set(ConstDependency, new NullFactory());
-      compilation.dependencyTemplates.set(ConstDependency, new ConstDependency.Template());
-    });
+    const { options } = this;
+    const name = this.objectName;
+    const outputPath = compiler.options.output.path;
 
-    compiler.plugin('compilation', (compilation, data) => {
-      data.normalModuleFactory.plugin('parser', (parser, options) => { // eslint-disable-line no-unused-vars
-        // should use function here instead of arrow function due to save the Tapable's context
-        parser.plugin('program', function i18nPlugin(ast) {
-          let param;
-          let defaultValue;
-          let expr;
-          walk(ast, (node) => {
-            expr = node;
-            if (node.type === 'MemberExpression' && node.object.name === funName) {
-              /**
-               * node.property.value for a[b], node.property.name for a.b
-               */
-              defaultValue = param = node.property.name || node.property.value;
-              process.bind(this)(localization, param, defaultValue, expr, failOnMissing, hideMessage);
-            } else if (node.type === 'CallExpression' && node.callee.name === objectName) {
-              switch (expr.arguments.length) {
-                case 2:
-                  param = this.evaluateExpression(expr.arguments[1]);
-                  if (!param.isString()) return;
-                  param = param.string;
-                  defaultValue = this.evaluateExpression(expr.arguments[0]);
-                  if (!defaultValue.isString()) return;
-                  defaultValue = defaultValue.string;
-                  break;
-                case 1:
-                  param = this.evaluateExpression(expr.arguments[0]);
-                  if (!param.isString()) return;
-                  defaultValue = param = param.string;
-                  break;
-                default:
-                  return;
-              }
-              process.bind(this)(localization, param, defaultValue, expr, failOnMissing, hideMessage);
-            }
+    compiler.plugin('compilation', (compilation) => {
+      compilation.plugin('optimize-chunk-assets', (chunks, callback) => {
+        const files = [];
+        chunks.forEach(chunk => files.push(...chunk.files));
+        files.push(...compilation.additionalChunkAssets);
+        const filteredFiles = files.filter(ModuleFilenameHelpers.matchObject(options));
+        Object.keys(this.localization).forEach((lan) => {
+          const table = {};
+          textTable[lan] = {};
+          filteredFiles.forEach((file) => {
+            textTable[lan][file] = table;
+            const asset = compilation.assets[file];
+            const input = asset.source();
+            const regex = new RegExp(`\\W${name}\\.\\w+?\\W`, 'g');
+            const match = input.match(regex);
+
+            match.forEach((item) => {
+              const itemName = item.slice(name.length + 2, item.length - 1);
+              table[itemName] = (this.localization[lan] || {})[itemName];
+            });
           });
-          return true;
         });
+        callback();
+      });
+    });
+    // 编译完成
+    compiler.plugin('done', () => {
+      Object.keys(this.localization).forEach((lan) => {
+        const outputFilePath = path.join(outputPath, `${lan}.table.json`);
+        const relativeOutputPath = path.relative(process.cwd(), outputFilePath);
+        mkdirp.sync(path.dirname(relativeOutputPath));
+        fs.writeFileSync(relativeOutputPath.split('?')[0], JSON.stringify(textTable[lan]));
       });
     });
   }
 }
 
-/**
- * make text into dependecies
- * @param {any} param
- */
-function process(localization, param, defaultValue, expr, failOnMissing, hideMessage) {
-  let result = localization ? localization(param) : defaultValue;
-  if (typeof result === 'undefined') {
-    let error = this.state.module[__dirname];
-    if (!error) {
-      error = new MissingLocalizationError(this.state.module, param, defaultValue);
-      this.state.module[__dirname] = error;
-
-      if (failOnMissing) {
-        this.state.module.errors.push(error);
-      } else if (!hideMessage) {
-        this.state.module.warnings.push(error);
-      }
-    } else if (!error.requests.includes(param)) {
-      error.add(param, defaultValue);
-    }
-    result = defaultValue;
-  }
-
-  const dep = new ConstDependency(JSON.stringify(result), expr.range);
-  dep.loc = expr.loc;
-  this.state.current.addDependency(dep);
-}
 export default I18nPlugin;
