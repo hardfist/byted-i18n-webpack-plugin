@@ -34,21 +34,22 @@ class I18nPlugin {
         const files = [];
         chunks.forEach(chunk => files.push(...chunk.files));
         files.push(...compilation.additionalChunkAssets);
-        const filteredFiles = files.filter(ModuleFilenameHelpers.matchObject(options));
+        const filteredFiles = files.filter(ModuleFilenameHelpers.matchObject.bind(null, options));
         Object.keys(this.localization).forEach((lan) => {
-          const table = {};
           textTable[lan] = {};
           filteredFiles.forEach((file) => {
-            textTable[lan][file] = table;
             const asset = compilation.assets[file];
             const input = asset.source();
             const regex = new RegExp(`\\W${name}\\.\\w+?\\W`, 'g');
             const match = input.match(regex);
-
-            match.forEach((item) => {
-              const itemName = item.slice(name.length + 2, item.length - 1);
-              table[itemName] = (this.localization[lan] || {})[itemName];
-            });
+            if (match) {
+              const table = {};
+              textTable[lan][file] = table;
+              match.forEach((item) => {
+                const itemName = item.slice(name.length + 2, item.length - 1);
+                table[itemName] = (this.localization[lan] || {})[itemName];
+              });
+            }
           });
         });
         callback();
