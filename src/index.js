@@ -22,12 +22,15 @@ class I18nPlugin {
     this.failOnMissing = !!this.options.failOnMissing;
     this.hideMessage = this.options.hideMessage || false;
     this.objectName = this.options.objectName || '__';
+    this.fileMap = this.options.fileMap;
+    this.outputPath = this.options.outputPath;
+    this.devPath = this.options.devPath;
   }
 
   apply(compiler) {
     const { options } = this;
     const name = this.objectName;
-    const outputPath = compiler.options.output.path;
+    let outputPath = compiler.options.output.path;
 
     compiler.plugin('compilation', (compilation) => {
       compilation.plugin('optimize-chunk-assets', (chunks, callback) => {
@@ -43,8 +46,13 @@ class I18nPlugin {
             const regex = new RegExp(`\\W${name}\\.\\w+?\\W`, 'g');
             const match = input.match(regex);
             if (match) {
-              const table = {};
-              textTable[lan][file] = table;
+              let fileName = file.split('.')[0];
+              if (this.fileMap) {
+                fileName = this.fileMap[fileName] || fileName;
+              }
+              // 获取以及存在的文案表，否则初始化为空对象
+              const table = textTable[lan][fileName] || {};
+              textTable[lan][fileName] = table;
               match.forEach((item) => {
                 const itemName = item.slice(name.length + 2, item.length - 1);
                 table[itemName] = (this.localization[lan] || {})[itemName];
@@ -58,7 +66,14 @@ class I18nPlugin {
     // 编译完成
     compiler.plugin('done', () => {
       Object.keys(this.localization).forEach((lan) => {
-        const outputFilePath = path.join(outputPath, `${lan}.table.json`);
+        // no output path define;
+        let outputFilePath = '';
+        if (process.env.NODE_ENV !== 'production' && this.devPath) {
+          outputPath = this.devPath || process.cwd();
+          outputFilePath = path.join(outputPath, `${lan}.text.json`);
+        } else {
+          outputFilePath = path.join(this.outputPath || outputPath, `${lan}.text.json`);
+        }
         const relativeOutputPath = path.relative(process.cwd(), outputFilePath);
         mkdirp.sync(path.dirname(relativeOutputPath));
         fs.writeFileSync(relativeOutputPath.split('?')[0], JSON.stringify(textTable[lan]));

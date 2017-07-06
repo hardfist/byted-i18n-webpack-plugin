@@ -1,9 +1,3 @@
-[![npm][npm]][npm-url]
-[![deps][deps]][deps-url]
-[![test][test]][test-url]
-[![coverage][cover]][cover-url]
-[![chat][chat]][chat-url]
-
 <div align="center">
   <!-- replace with accurate logo e.g from https://worldvectorlogo.com/ -->
   <a href="https://github.com/webpack/webpack">
@@ -14,19 +8,34 @@
   <p>i18n (localization) plugin for Webpack.<p>
 </div>
 
-<h2 align="center">Install</h2>
+## Install
 
 ```bash
-npm i -D i18n-webpack-plugin
+npm i -D topbuzz-i18n-webpack-plugin
 ```
 
-<h2 align="center">Usage</h2>
+## Usage
 
-This plugin creates bundles with translations baked in. So you can serve the translated bundle to your clients.
+This plugin will extract all text items for i18n into different files， classify with different js packages. example:
 
-see [webpack/webpack/examples/i18n](https://github.com/webpack/webpack/tree/master/examples/i18n).
+```json
+{
+  "js/pgc/signin": {
+    "PasswordLengthWrong": "パスワードは、6文字以上が必要です",
+    "PasswordSpaceWrong": "パスワードの最初と最後にスペースを使うことはできませんが、それ以外の場所には使うことができます",
+    "SignMethodEmail": "Emailで無料会員登録する"
+  },
+  "js/pgc/fault": {
+    "ErrorWhoops": "...あれ？...",
+    "Error404": "該当するページは見つかりませんでした。",
+    "Error500": "エラーが発生しました。再度お試しください。",
+    "GoHome": "ホームへ"
+  }
+}
+```
+> the package name is the some as webpack entry file
 
-<h2 align="center">Options</h2>
+## Options
 
 ```
 plugins: [
@@ -34,54 +43,40 @@ plugins: [
   new I18nPlugin(languageConfig, optionsObj)
 ],
 ```
- - `optionsObj.functionName`: the default value is `__`, you can change it to other function name.
- - `optionsObj.failOnMissing`: the default value is `false`, which will show a warning message, if the mapping text cannot be found. If set to `true`, the message will be an error message.
- - `optionsObj.hideMessage`: the default value is `false`, which will show the warning/error message. If set to `true`, the message will be hide.
+ - `optionsObj.objectName`: the default value is `__`, you can change it to other function name.
+ - `optionsObj.devPath`: the default value is `./`, which defalut path to write files, when start in webpack dev server.
+  - `optionsObj.outputPath`: the default value is output path in webpack config, which defalut path to write files.
+ - `optionsObj.fileMap`: the default value is `{}`, which will map the text items in different files into the same one.
 
-<h2 align="center">Maintainers</h2>
+> objectName is different when you use import(es6 commonjs) or require;
+  require i18n file just set modules name, 
+##example
+```js
+  new I18nPlugin(localization, {
+    devPath: './output_source',
+    objectName: '_localization2.default',
+    fileMap: {
+      'js/pgc/earning-setting': 'js/pgc/revenue',
+      'js/pgc/earning-billing': 'js/pgc/revenue',
+      'js/pgc/earning-contract': 'js/pgc/revenue',
+      'js/pgc/earning-overview': 'js/pgc/revenue',
+      'js/pgc/stats-summary': 'js/pgc/statistics',
+      'js/pgc/stats-video-analysis': 'js/pgc/statistics',
+      'js/pgc/stats-content-detail': 'js/pgc/statistics'
+    }
+  })
+```
+## Maintainers
 
 <table>
   <tbody>
     <tr>
       <td align="center">
         <img width="150" height="150"
-        src="https://avatars3.githubusercontent.com/u/166921?v=3&s=150">
+        src="https://avatars1.githubusercontent.com/u/3362483?v=3&s=460">
         </br>
-        <a href="https://github.com/bebraw">Juho Vepsäläinen</a>
-      </td>
-      <td align="center">
-        <img width="150" height="150"
-        src="https://avatars2.githubusercontent.com/u/8420490?v=3&s=150">
-        </br>
-        <a href="https://github.com/d3viant0ne">Joshua Wiens</a>
-      </td>
-      <td align="center">
-        <img width="150" height="150"
-        src="https://avatars3.githubusercontent.com/u/533616?v=3&s=150">
-        </br>
-        <a href="https://github.com/SpaceK33z">Kees Kluskens</a>
-      </td>
-      <td align="center">
-        <img width="150" height="150"
-        src="https://avatars3.githubusercontent.com/u/3408176?v=3&s=150">
-        </br>
-        <a href="https://github.com/TheLarkInn">Sean Larkin</a>
+        <a href="https://github.com/bebraw">dlutwuwei</a>
       </td>
     </tr>
   <tbody>
 </table>
-
-[npm]: https://img.shields.io/npm/v/i18n-webpack-plugin.svg
-[npm-url]: https://npmjs.com/package/i18n-webpack-plugin
-
-[deps]: https://david-dm.org/webpack-contrib/i18n-webpack-plugin.svg
-[deps-url]: https://david-dm.org/webpack-contrib/i18n-webpack-plugin
-
-[chat]: https://img.shields.io/badge/gitter-webpack%2Fwebpack-brightgreen.svg
-[chat-url]: https://gitter.im/webpack/webpack
-
-[test]: http://img.shields.io/travis/webpack-contrib/i18n-webpack-plugin.svg
-[test-url]: https://travis-ci.org/webpack-contrib/i18n-webpack-plugin
-
-[cover]: https://codecov.io/gh/webpack-contrib/i18n-webpack-plugin/branch/master/graph/badge.svg
-[cover-url]: https://codecov.io/gh/webpack-contrib/i18n-webpack-plugin
