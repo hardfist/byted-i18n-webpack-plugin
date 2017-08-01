@@ -20,7 +20,13 @@ class I18nPlugin {
     if (typeof localization !== 'function') {
       throw new Error('i18n-webpack-plugin: localization must be a function that return the localize text object, like: function() { return { en: { a: "ok"}, ja: {}, pt: {} } }');
     }
-    this.localization = localization || {};
+    this.localizationResult = null;
+    this.localization = function cache(){
+      if(this.localizationResult){
+        return this.localizationResult
+      }
+      return this.localizationResult = localization();
+    }
     this.options = options || {};
     this.failOnMissing = !!this.options.failOnMissing;
     this.hideMessage = this.options.hideMessage || false;
@@ -34,7 +40,9 @@ class I18nPlugin {
     const { options } = this;
     const name = this.objectName;
     let outputPath = compiler.options.output.path;
-
+    compiler.plugin('compile',function(){
+        this.localizationResult = null;
+    })
     compiler.plugin('compilation', (compilation) => {
       compilation.plugin('optimize-chunk-assets', (chunks, callback) => {
         const files = [];
