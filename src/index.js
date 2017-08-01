@@ -17,6 +17,9 @@ const textTable = {};
  */
 class I18nPlugin {
   constructor(localization, options) {
+    if (typeof localization !== 'function') {
+      throw new Error('localization must be a function that return the localize text object, like: { en: { a: "ok"}, ja: {}, pt: {} }');
+    }
     this.localization = localization || {};
     this.options = options || {};
     this.failOnMissing = !!this.options.failOnMissing;
