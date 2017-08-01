@@ -18,7 +18,7 @@ const textTable = {};
 class I18nPlugin {
   constructor(localization, options) {
     if (typeof localization !== 'function') {
-      throw new Error('i18n-webpack-plugin: localization must be a function that return the localize text object, like: { en: { a: "ok"}, ja: {}, pt: {} }');
+      throw new Error('i18n-webpack-plugin: localization must be a function that return the localize text object, like: function() { return { en: { a: "ok"}, ja: {}, pt: {} } }');
     }
     this.localization = localization || {};
     this.options = options || {};
@@ -41,7 +41,7 @@ class I18nPlugin {
         chunks.forEach(chunk => files.push(...chunk.files));
         files.push(...compilation.additionalChunkAssets);
         const filteredFiles = files.filter(ModuleFilenameHelpers.matchObject.bind(null, options));
-        Object.keys(this.localization).forEach((lan) => {
+        Object.keys(this.localization()).forEach((lan) => {
           textTable[lan] = {};
           filteredFiles.forEach((file) => {
             const asset = compilation.assets[file];
@@ -58,7 +58,7 @@ class I18nPlugin {
               textTable[lan][fileName] = table;
               match.forEach((item) => {
                 const itemName = item.slice(name.length + 2, item.length - 1);
-                table[itemName] = (this.localization[lan] || {})[itemName];
+                table[itemName] = (this.localization()[lan] || {})[itemName];
               });
             }
           });
@@ -68,7 +68,7 @@ class I18nPlugin {
     });
     // 编译完成
     compiler.plugin('done', () => {
-      Object.keys(this.localization).forEach((lan) => {
+      Object.keys(this.localization()).forEach((lan) => {
         // no output path define;
         let outputFilePath = '';
         if (process.env.NODE_ENV !== 'production' && this.devPath) {
